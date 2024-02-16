@@ -1,70 +1,77 @@
-# Getting Started with Create React App
+## OpenLayers
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+https://openlayers.org/
+npm i ol
 
-## Available Scripts
+## 중심좌표
 
-In the project directory, you can run:
+고투몰 : [127.0047079, 37.5065717]
+잠실역 : [127.10270176, 37.51006675]
 
-### `npm start`
+//
+const wgs84 = "+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs";
+const utmk =
+"+proj=tmerc +lat_0=38 +lon_0=127.5 +k=0.9996 +x_0=1000000 +y_0=2000000 +ellps=GRS80 +units=m +no_defs";
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+function UTM2WGS(x, y) {
+const proj = proj4(utmk, wgs84, [x, y]);
+return { x: proj.y, y: proj.x };
+}
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+function drawLink(subPathLinkInfoList, coordType) {
+const vector_line = new Layer.Vector({
+id: "vector_line",
+source: new Source.Vector(),
+style: new Style.Style({
+fill: new Style.Fill({
+color: "rgba(255, 255, 255, 0.2)",
+}),
+stroke: new Style.Stroke({
+color: "rgba(255, 0, 0, 0.8)",
+width: 4,
+}),
+image: new Style.Circle({
+radius: 7,
+fill: new Style.Fill({
+color: "#ffcc33",
+}),
+}),
+}),
+});
 
-### `npm test`
+    let sequence = 0; // initialize sequence counter
+    for (let j = 0; j < subPathLinkInfoList.length; j++) {
+        const locations = [];
+        let index = 0;
+        for (let i = 0; i < subPathLinkInfoList[j].pts.length; i++) {
+            let point = [];
+            if (coordType === true) {
+                let utm2WGS = UTM2WGS(
+                    subPathLinkInfoList[j].pts[i].x / 100,
+                    subPathLinkInfoList[j].pts[i].y / 100
+                );
+                point.push(utm2WGS.y, utm2WGS.x);
+            } else {
+                point.push(
+                    subPathLinkInfoList[j].pts[i].x,
+                    subPathLinkInfoList[j].pts[i].y
+                );
+            }
+            locations.push(point);
+            index = i;
+        }
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+        const lineFeature = new Feature({
+            geometry: new Geometry.LineString(locations),
+            sequence: sequence++,
+        });
 
-### `npm run build`
+        const passcode = subPathLinkInfoList[j].passCode & 0xff;
+        // lineFeature.set('description', String(subPathLinkInfoList[j].passCode));
+        lineFeature.set("description", String(passcode));
+        lineFeature.setStyle(createStyleFunction);
+        vector_line.getSource().addFeature(lineFeature);
+    }
+    mapMarker.addLayer(vector_line);
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
-
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
-
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
-
-### `npm run eject`
-
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
-
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
-
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
-
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
-
-## Learn More
-
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
-
-To learn React, check out the [React documentation](https://reactjs.org/).
-
-### Code Splitting
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
-
-### Analyzing the Bundle Size
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
-
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+}
